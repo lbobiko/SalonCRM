@@ -1,88 +1,118 @@
-import java.util.*;
-import java.time.LocalDateTime;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.time.LocalDate;
 
 public class CRMApp {
-    private List<Client> clients = new ArrayList<>();
-    private List<Service> services = new ArrayList<>();
-    private List<Appointment> appointments = new ArrayList<>();
-    private Scanner scanner = new Scanner(System.in);
+    private List<Client> clients;
+    private Scanner scanner;
+
+    public CRMApp() {
+        clients = new ArrayList<>();
+        scanner = new Scanner(System.in);
+    }
 
     public void run() {
-        while (true) {
-            System.out.println("\n=== Salon Kosmetyczny CRM ===");
-            System.out.println("1. Dodaj klientkę");
-            System.out.println("2. Dodaj usługę");
-            System.out.println("3. Umów wizytę");
-            System.out.println("4. Pokaż wizyty");
-            System.out.println("0. Wyjście");
-
-            String choice = scanner.nextLine();
+        String choice;
+        do {
+            System.out.println("1. Dodaj klienta");
+            System.out.println("2. Wyświetl klientów");
+            System.out.println("3. Usuń klienta");
+            System.out.println("4. Edytuj klienta");
+            System.out.println("5. Wyświetl raport");
+            System.out.println("6. Zapisz raport do pliku");
+            System.out.println("7. Wyświetl przypomnienia");
+            System.out.println("0. Wyjdź");
+            System.out.print("Wybierz opcję: ");
+            choice = scanner.nextLine();
 
             switch (choice) {
                 case "1" -> addClient();
-                case "2" -> addService();
-                case "3" -> addAppointment();
-                case "4" -> showAppointments();
-                case "0" -> System.exit(0);
-                default -> System.out.println("Nieznana opcja.");
+                case "2" -> displayClients();
+                case "3" -> removeClient();
+                case "4" -> editClient();
+                case "5" -> displayReport();
+                case "6" -> saveReportToFile();
+                case "7" -> showReminders();
             }
-        }
+        } while (!choice.equals("0"));
     }
 
     private void addClient() {
-        System.out.print("Imię i nazwisko: ");
+        System.out.print("Imię klienta: ");
         String name = scanner.nextLine();
-        System.out.print("Telefon: ");
+        System.out.print("Telefon klienta: ");
         String phone = scanner.nextLine();
-        System.out.print("Email: ");
+        System.out.print("Email klienta: ");
         String email = scanner.nextLine();
-        clients.add(new Client(name, phone, email));
-        System.out.println("Dodano klientkę.");
-    }
-
-    private void addService() {
-        System.out.print("Nazwa usługi: ");
-        String name = scanner.nextLine();
-        System.out.print("Czas trwania (minuty): ");
-        int duration = Integer.parseInt(scanner.nextLine());
-        System.out.print("Cena (zł): ");
-        double price = Double.parseDouble(scanner.nextLine());
-        services.add(new Service(name, duration, price));
-        System.out.println("Dodano usługę.");
-    }
-
-    private void addAppointment() {
-        if (clients.isEmpty() || services.isEmpty()) {
-            System.out.println("Dodaj najpierw klientkę i usługę.");
-            return;
-        }
-
-        System.out.println("Wybierz klientkę:");
-        for (int i = 0; i < clients.size(); i++) {
-            System.out.println((i+1) + ". " + clients.get(i));
-        }
-        int clientIndex = Integer.parseInt(scanner.nextLine()) - 1;
-
-        System.out.println("Wybierz usługę:");
-        for (int i = 0; i < services.size(); i++) {
-            System.out.println((i+1) + ". " + services.get(i));
-        }
-        int serviceIndex = Integer.parseInt(scanner.nextLine()) - 1;
-
-        System.out.print("Podaj datę i godzinę (YYYY-MM-DDTHH:MM): ");
-        LocalDateTime dateTime = LocalDateTime.parse(scanner.nextLine());
-
-        appointments.add(new Appointment(clients.get(clientIndex), services.get(serviceIndex), dateTime));
-        System.out.println("Wizyta dodana.");
-    }
-
-    private void showAppointments() {
-        if (appointments.isEmpty()) {
-            System.out.println("Brak wizyt.");
-        } else {
-            for (Appointment a : appointments) {
-                System.out.println(a);
+        System.out.print("Co klientka lubi / preferencje (np. delikatne zapachy): ");
+        String preferences = scanner.nextLine();
+        System.out.print("Data przypomnienia o wizycie (RRRR-MM-DD) lub Enter, jeśli brak: ");
+        String reminder = scanner.nextLine();
+        Client newClient = new Client(name, phone, email, preferences);
+        if (!reminder.isEmpty()) {
+            try {
+                LocalDate reminderDate = LocalDate.parse(reminder);
+                newClient.setNextVisitReminder(reminderDate);
+            } catch (Exception e) {
+                System.out.println("Błędny format daty, przypomnienie nie zostało ustawione.");
             }
+        }
+        clients.add(newClient);
+    }
+
+    private void showReminders() {
+        System.out.println("=== Przypomnienia ===");
+        for (Client c : clients) {
+            System.out.println(c.getReminderInfo());
+        }
+    }
+
+    private void saveReportToFile() {
+        try {
+            PrintWriter writer = new PrintWriter("raport_klientek.txt");
+            for (Client c : clients) {
+                writer.println(c.getReport());
+                writer.println();
+            }
+            writer.close();
+            System.out.println("Raport zapisany jako 'raport_klientek.txt'.");
+        } catch (Exception e) {
+            System.out.println("Błąd podczas zapisu pliku: " + e.getMessage());
+        }
+    }
+
+    private void displayClients() {
+        if (clients.isEmpty()) {
+            System.out.println("Brak klientek.");
+        } else {
+            for (Client c : clients) {
+                System.out.println(c);
+            }
+        }
+    }
+
+    private void removeClient() {
+        displayClients();
+        System.out.print("Podaj numer klientki do usunięcia: ");
+        int index = Integer.parseInt(scanner.nextLine());
+        if (index >= 0 && index < clients.size()) {
+            clients.remove(index);
+            System.out.println("Klientka usunięta.");
+        } else {
+            System.out.println("Nieprawidłowy numer.");
+        }
+    }
+
+    private void editClient() {
+        System.out.println("Edytowanie niezaimplementowane.");
+    }
+
+    private void displayReport() {
+        for (Client c : clients) {
+            System.out.println(c.getReport());
+            System.out.println();
         }
     }
 }
